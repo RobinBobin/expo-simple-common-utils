@@ -1,0 +1,31 @@
+{
+  "author": "Ruben Shalimov <r_shalimov@inbox.ru>",
+  "bugs": {
+    "url": "https://github.com/RobinBobin/expo-simple-common-utils/issues"
+  },
+  "description": "A collection of utilities for expo.",
+  "devDependencies": {
+    "@robinbobin/ts-eslint-prettier": "^2.3.2",
+    "eslint": "^9.24.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "files": [
+    "/js",
+    "/src"
+  ],
+  "homepage": "https://github.com/RobinBobin/expo-simple-common-utils#readme",
+  "keywords": [
+    "expo",
+    "utils"
+  ],
+  "license": "ISC",
+  "main": "js/src/index.js",
+  "name": "@robinbobin/expo-simple-common-utils",
+  "packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808",
+  "repository": "github:RobinBobin/expo-simple-common-utils.git",
+  "scripts": {
+    "prepack": "./prepack.sh"
+  },
+  "version": "1.0.0"
+}

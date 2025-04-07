@@ -1,11 +1,12 @@
 import type { ReadonlyDeep } from 'type-fest'
 import type {
   ICaptureParams,
-  IMoment,
   ISliceData,
   ISpanCalculationContext,
   IToStringParams,
-  TId
+  TId,
+  TRMoment,
+  TRMoments
 } from './types'
 
 import { isArray, isString, isUndefined } from 'radashi'
@@ -14,7 +15,7 @@ import { verify } from 'simple-common-utils'
 import { BaseDataCapturingService } from '../BaseDataCapturingService'
 
 class PerformanceCounter extends BaseDataCapturingService {
-  private readonly moments = new Map<TId, Readonly<IMoment>>()
+  private readonly moments = new Map<TId, TRMoment>()
 
   override clear(): void {
     this.moments.clear()
@@ -30,41 +31,15 @@ class PerformanceCounter extends BaseDataCapturingService {
 
     return slicesArray
       .map(slice => {
-        const { ids, shouldCalculateSpan } =
+        const { ids, shouldCalculateSpan, title } =
           PerformanceCounter.getNormalizedSliceData(slice)
 
         try {
           const moments = this.getMoments(ids)
 
-          if (shouldCalculateSpan) {
-            const { previousMoment, span } =
-              moments.reduce<ISpanCalculationContext>(
-                (context, currentMoment) => {
-                  if (context.previousMoment) {
-                    context.span +=
-                      currentMoment.timestamp - context.previousMoment.timestamp
-                  }
-
-                  context.previousMoment = currentMoment
-
-                  return context
-                },
-                { previousMoment: undefined, span: 0 }
-              )
-
-            return `${previousMoment?.message}\n\t\t${Math.round(span)} ms`
-          }
-
-          return moments
-            .map(({ message, timestamp }, index, array) => {
-              // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-              const previousTimestamp = array[index - 1]?.timestamp ?? timestamp
-              const durationMS = timestamp - previousTimestamp
-              const duration = durationMS ? `${Math.round(durationMS)} ms` : '-'
-
-              return `${message}\n\t\t${duration}`
-            })
-            .join('\n\n')
+          return shouldCalculateSpan ?
+              PerformanceCounter.stringifyMomentsAsSpan(moments, title)
+            : PerformanceCounter.stringifyMomentsAll(moments)
         } catch (error) {
           return (error as Error).message
         }
@@ -120,7 +95,7 @@ class PerformanceCounter extends BaseDataCapturingService {
     return this.moments.has(id)
   }
 
-  private getMoments(ids: readonly TId[]): readonly Readonly<IMoment>[] {
+  private getMoments(ids: readonly TId[]): TRMoments {
     if (!ids.length) {
       return Array.from(this.moments.values())
     }
@@ -161,7 +136,7 @@ class PerformanceCounter extends BaseDataCapturingService {
   private static getNormalizedSliceData(
     sliceData: ReadonlyDeep<ISliceData>
   ): ReadonlyDeep<Required<ISliceData>> {
-    const { ids = [] } = sliceData
+    const { ids = [], title = '' } = sliceData
 
     let { shouldCalculateSpan } = sliceData
 
@@ -172,7 +147,8 @@ class PerformanceCounter extends BaseDataCapturingService {
 
     return {
       ids,
-      shouldCalculateSpan
+      shouldCalculateSpan,
+      title
     }
   }
 
@@ -182,6 +158,41 @@ class PerformanceCounter extends BaseDataCapturingService {
     const { slices = {} } = params
 
     return { slices }
+  }
+
+  private static stringifyMomentsAll(moments: TRMoments): string {
+    return moments
+      .map(({ message, timestamp }, index, array) => {
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+        const previousTimestamp = array[index - 1]?.timestamp ?? timestamp
+        const durationMS = timestamp - previousTimestamp
+        const duration = durationMS ? `: ${Math.round(durationMS)} ms` : ': -'
+
+        return `${message}\n\t\t${duration}`
+      })
+      .join('\n\n')
+  }
+
+  private static stringifyMomentsAsSpan(
+    moments: TRMoments,
+    title: string
+  ): string {
+    const { previousMoment, span } = moments.reduce<ISpanCalculationContext>(
+      (context, currentMoment) => {
+        if (context.previousMoment) {
+          context.span +=
+            currentMoment.timestamp - context.previousMoment.timestamp
+        }
+
+        context.previousMoment = currentMoment
+
+        return context
+      },
+      { previousMoment: undefined, span: 0 }
+    )
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return `${title || previousMoment!.message}\n\t\t: ${Math.round(span)} ms`
   }
 }
 

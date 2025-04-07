@@ -20,6 +20,9 @@ interface IMoment
   timestamp: ReturnType<typeof performance.now>
 }
 
+type TRMoment = Readonly<IMoment>
+type TRMoments = readonly TRMoment[]
+
 interface ISpanCalculationContext {
   previousMoment: IMoment | undefined
   span: number
@@ -28,6 +31,7 @@ interface ISpanCalculationContext {
 interface ISliceData {
   ids?: TId[]
   shouldCalculateSpan?: boolean
+  title?: string
 }
 
 interface IToStringParams {
@@ -40,5 +44,7 @@ export type {
   ISliceData,
   ISpanCalculationContext,
   IToStringParams,
-  TId
+  TId,
+  TRMoment,
+  TRMoments
 }
